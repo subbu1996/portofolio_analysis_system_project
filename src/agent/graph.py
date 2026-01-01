@@ -3,6 +3,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 
 from src.agent.portfolio_agent import create_portfolio_agent
+from src.agent.news_agent import create_news_agent
 from src.agent.supervisor_agent import create_supervisor_agent
 
 from dotenv import load_dotenv
@@ -27,16 +28,16 @@ def create_multi_agent_system(persistence_required=True):
     
     # Create worker agents
     portfolio_agent = create_portfolio_agent()
+    news_agent = create_news_agent()
     
     # Agents - WiP
-    # news_agent = create_news_agent()
     # monitor_agent = create_monitor_agent()
     # synthesis_agent = create_synthesis_agent()
     # dashboards_agent = create_dashboards_agent()
     
     # Create supervisor with all agents
     supervisor_graph = create_supervisor_agent(
-        agents=[portfolio_agent]
+        agents=[portfolio_agent, news_agent]
     )
     
     if persistence_required:
