@@ -2,14 +2,22 @@ import logging
 # from langgraph.prebuilt import create_react_agent
 from langchain.agents import create_agent
 
-from tools import (
+from src.tools import (
     fetch_stock_price,
     fetch_company_fundamentals,
     fetch_historical_prices,
     calculate_portfolio_metrics,
 )
-from state import AgentState
-from agent.create_llm import create_ollama_llm
+
+from src.portfolio_tools import (
+    get_portfolio_data,
+    get_holding_info,
+    get_holdings_by_sector,
+    calculate_portfolio_value
+)
+
+from src.state import AgentState
+from src.agent.create_llm import create_ollama_llm, create_openrouter_llm
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +33,7 @@ def create_portfolio_agent():
     - Analyzing P/E ratios
     - Watch list analysis
     """
-    llm = create_ollama_llm()
+    llm = create_openrouter_llm()
 
     system_prompt = """
         You are the Portfolio Agent, also known as "The Quant" - a specialized financial analyst focused on Indian equity and mutual fund markets.
@@ -88,7 +96,11 @@ def create_portfolio_agent():
             fetch_stock_price,
             fetch_company_fundamentals,
             fetch_historical_prices,
-            calculate_portfolio_metrics
+            calculate_portfolio_metrics,
+            get_portfolio_data,
+            get_holding_info,
+            get_holdings_by_sector,
+            calculate_portfolio_value
         ],
         state_schema=AgentState,
         system_prompt=system_prompt,

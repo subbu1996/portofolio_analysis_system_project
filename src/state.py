@@ -16,10 +16,10 @@ class AgentState(TypedDict):
     """
     messages: Annotated[Sequence[BaseMessage], add_messages]
     next: str
-    portfolio_data: dict | None
-    analysis_results: dict | None
+    # portfolio_data: dict | None
+    # analysis_results: dict | None
     remaining_steps: list | None
-    error: str | None
+    # error: str | None
 
 
 class PortfolioSchema(TypedDict):

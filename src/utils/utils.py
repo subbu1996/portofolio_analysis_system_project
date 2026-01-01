@@ -168,3 +168,4 @@ def parse_stock_symbol(symbol: str) -> tuple[str, str]:
         raise ValueError(f"Unsupported exchange: {exchange}. Supported: NSE, BSE")
     
     return ticker, exchange
+

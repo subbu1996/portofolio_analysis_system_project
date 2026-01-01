@@ -5,8 +5,8 @@ import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
-from agent.graph import create_multi_agent_system
-from utils import load_portfolio_from_file, pretty_print_messages
+from src.agent.graph import create_multi_agent_system
+from src.utils.utils import load_portfolio_from_file, pretty_print_messages
 
 
 # Configure logging
@@ -37,8 +37,8 @@ def run_portfolio_analysis(query: str, portfolio_data: dict = None):
     input_data = {
         "messages": [HumanMessage(content=query)],
         "next": "",
-        "portfolio_data": portfolio_data,
-        "analysis_results": None
+        # "portfolio_data": portfolio_data,
+        # "analysis_results": None
     }
     
     print(f"\n{'='*80}")

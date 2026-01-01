@@ -10,11 +10,6 @@ import numpy as np
 # from numpy_financial import xirr as np_xirr
 # from xirr import xirr
 
-
-# ============================================================================
-# ALPHA VANTAGE TOOL - Real-time & Historical Market Data
-# ============================================================================
-
 class AlphaVantageClient:
     """Client for Alpha Vantage API supporting Indian stocks (NSE/BSE)."""
     

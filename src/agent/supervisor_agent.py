@@ -1,7 +1,7 @@
 import logging
 from langgraph_supervisor import create_supervisor
-from state import AgentState
-from agent.create_llm import create_ollama_llm
+from src.state import AgentState
+from src.agent.create_llm import create_ollama_llm, create_openrouter_llm
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def create_supervisor_agent(agents: list):
         Compiled supervisor graph
     """
     
-    llm = create_ollama_llm()
+    llm = create_openrouter_llm()
     
     supervisor = create_supervisor(
         agents=agents,
@@ -62,7 +62,9 @@ def create_supervisor_agent(agents: list):
             "- If portfolio data is needed, ask the portfolio_agent to parse it first\n"
             "- Format numbers clearly (with INR currency for Indian markets)\n"
             "- Provide context and insights, not just raw numbers\n\n"
+
             "IMPORTANT:\n"
+            "- Please co-ordinate with agents in token efficient manner to reduce costs\n"
             "- You are a planner and coordinator, NOT an executor\n"
             "- Always delegate work to agents - do not calculate yourself\n"
             "- For any portfolio analysis, use portfolio_agent\n"

@@ -1,7 +1,7 @@
 import logging
 
-from agent.portfolio_agent import create_portfolio_agent
-from agent.supervisor_agent import create_supervisor_agent
+from src.agent.portfolio_agent import create_portfolio_agent
+from src.agent.supervisor_agent import create_supervisor_agent
 
 from dotenv import load_dotenv
 
