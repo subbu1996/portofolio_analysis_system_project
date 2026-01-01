@@ -2,11 +2,12 @@
 import os
 import json
 import logging
+import uuid
 from datetime import datetime
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from src.agent.graph import create_multi_agent_system
-from src.utils.utils import load_portfolio_from_file, pretty_print_messages
+from src.utils.utils import load_portfolio_from_file, pretty_print_messages, print_stream
 
 
 # Configure logging
@@ -46,17 +47,29 @@ def run_portfolio_analysis(query: str, portfolio_data: dict = None):
     print(f"{'='*80}\n")
     
     # Stream the execution
+    # try:
+    #     for update in app.stream(input_data, stream_mode="updates"):
+    #         # print(update)
+    #         pretty_print_messages(update)
+        
+    #     # logger.info("Portfolio analysis completed successfully")
+        
+    # except Exception as e:
+    #     logger.error(f"Error during execution: {e}")
+    #     raise
+
     try:
-        for update in app.stream(input_data, stream_mode="updates"):
-            # print(update)
-            pretty_print_messages(update)
-        
-        # logger.info("Portfolio analysis completed successfully")
-        
+        config = {"configurable": {"thread_id": str(uuid.uuid4()), "user_id": "1"}}
+        print_stream(
+            app.stream(
+                input_data,
+                config,
+                subgraphs=True,
+            )
+        ) 
     except Exception as e:
         logger.error(f"Error during execution: {e}")
         raise
-
 
 def run_examples():
     """Run example queries demonstrating system capabilities."""

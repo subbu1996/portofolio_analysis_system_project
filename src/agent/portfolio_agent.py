@@ -17,7 +17,7 @@ from src.portfolio_tools import (
 )
 
 from src.state import AgentState
-from src.agent.create_llm import create_ollama_llm, create_openrouter_llm
+from src.agent.create_llm import create_llm
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def create_portfolio_agent():
     - Analyzing P/E ratios
     - Watch list analysis
     """
-    llm = create_openrouter_llm()
+    llm = create_llm()
 
     system_prompt = """
         You are the Portfolio Agent, also known as "The Quant" - a specialized financial analyst focused on Indian equity and mutual fund markets.

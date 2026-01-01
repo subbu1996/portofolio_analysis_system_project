@@ -8,8 +8,26 @@ from langchain_openai import ChatOpenAI
 logger = logging.getLogger(__name__)
 load_dotenv()
 
+def create_llm(mode=None):
+    if mode is None:
+        mode = os.getenv("DEFAULT_LLM_MODEL_MODE")
+    
+    if mode in ['open_router']:
+        llm = create_openrouter_llm()
+    elif mode in ['ollama']:
+        llm = create_ollama_llm()
+    elif mode in ['gemini']:
+        llm = create_gemini_llm()
+    else:
+        llm = create_ollama_llm()
 
-def create_ollama_llm(model_name: str = "phi4-mini:3.8b", temperature: float = 0.7):
+    return llm
+    
+# mistral - 'mistral:7b'
+# GPT - 'gpt-oss:20b'
+# ministral - ministral-3:3b
+
+def create_ollama_llm(model_name: str = "ministral-3:3b", temperature: float = 0.7):
     try:
         llm = ChatOllama(
             model=model_name,

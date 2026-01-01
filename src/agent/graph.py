@@ -1,4 +1,6 @@
 import logging
+from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
 
 from src.agent.portfolio_agent import create_portfolio_agent
 from src.agent.supervisor_agent import create_supervisor_agent
@@ -15,7 +17,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 logger.info("Successfully Imported Environmental Variable")
 
-def create_multi_agent_system():
+def create_multi_agent_system(persistence_required=True):
     """Create the complete multi-agent system.
     
     Returns:
@@ -37,10 +39,13 @@ def create_multi_agent_system():
         agents=[portfolio_agent]
     )
     
-    # Compile the graph
-    compiled_graph = supervisor_graph.compile()
+    if persistence_required:
+        conn = sqlite3.connect("data/checkpoints.db", check_same_thread=False)
+        compiled_graph = supervisor_graph.compile(checkpointer=SqliteSaver(conn))
+    else:
+        compiled_graph = supervisor_graph.compile()
     
     # logger.info("Multi-Agent System initialized successfully")
     return compiled_graph
 
-graph = create_multi_agent_system()
+graph = create_multi_agent_system(persistence_required=False)

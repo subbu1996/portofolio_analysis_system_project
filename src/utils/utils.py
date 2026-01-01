@@ -7,6 +7,30 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def print_stream(stream):
+    for ns, update in stream:
+        for node, node_updates in update.items():
+            if node_updates is None:
+                continue
+
+            if isinstance(node_updates, (dict, tuple)):
+                node_updates_list = [node_updates]
+            elif isinstance(node_updates, list):
+                node_updates_list = node_updates
+            else:
+                raise ValueError(node_updates)
+
+            for node_updates in node_updates_list:
+                if isinstance(node_updates, tuple):
+                    continue
+                messages_key = next(
+                    (k for k in node_updates.keys() if "messages" in k), None
+                )
+                if messages_key is not None:
+                    node_updates[messages_key][-1].pretty_print()
+                else:
+                    pass
+
 def pretty_print_messages(update: dict, stream_mode: str = "updates"):
     """Pretty print agent messages for debugging.
     

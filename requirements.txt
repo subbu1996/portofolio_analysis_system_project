@@ -9,4 +9,5 @@ numpy
 numpy_financial
 langgraph-supervisor
 langchain-ollama
+langgraph-checkpoint-sqlite
 xirr
