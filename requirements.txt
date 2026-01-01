@@ -1,0 +1,12 @@
+langchain
+langgraph
+langchain-google-genai
+python-dotenv
+ipykernel
+langchain-openai
+langgraph-cli[inmem]
+numpy
+numpy_financial
+langgraph-supervisor
+langchain-ollama
+xirr

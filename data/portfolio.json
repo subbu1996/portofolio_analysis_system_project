@@ -1,0 +1,167 @@
+{
+  "start_date": "2023-01-15",
+  "net_value": 850000,
+  "holdings": [
+    {
+      "symbol": "RELIANCE.NSE",
+      "asset_type": "equity",
+      "quantity": 25,
+      "avg_price": 2450.50,
+      "current_price": 2890.75,
+      "sector": "Energy",
+      "platform_acquired": "Zerodha",
+      "purchase_date": "2023-01-15",
+      "pe_ratio": 24.5
+    },
+    {
+      "symbol": "TCS.NSE",
+      "asset_type": "equity",
+      "quantity": 15,
+      "avg_price": 3200.00,
+      "current_price": 3850.50,
+      "sector": "Information Technology",
+      "platform_acquired": "Groww",
+      "purchase_date": "2023-03-20",
+      "pe_ratio": 28.3
+    },
+    {
+      "symbol": "HDFCBANK.NSE",
+      "asset_type": "equity",
+      "quantity": 30,
+      "avg_price": 1580.25,
+      "current_price": 1685.80,
+      "sector": "Financial Services",
+      "platform_acquired": "Zerodha",
+      "purchase_date": "2023-02-10",
+      "pe_ratio": 19.2
+    },
+    {
+      "symbol": "INFY.NSE",
+      "asset_type": "equity",
+      "quantity": 20,
+      "avg_price": 1420.00,
+      "current_price": 1532.40,
+      "sector": "Information Technology",
+      "platform_acquired": "Upstox",
+      "purchase_date": "2023-04-05",
+      "pe_ratio": 26.8
+    },
+    {
+      "symbol": "ITC.NSE",
+      "asset_type": "equity",
+      "quantity": 50,
+      "avg_price": 385.50,
+      "current_price": 442.30,
+      "sector": "FMCG",
+      "platform_acquired": "Zerodha",
+      "purchase_date": "2023-05-12",
+      "pe_ratio": 21.5
+    },
+    {
+      "symbol": "AXISDIRECT_MF001",
+      "asset_type": "mutual_fund",
+      "quantity": 125.45,
+      "avg_price": 145.20,
+      "current_price": 162.85,
+      "sector": "Equity - Large Cap",
+      "platform_acquired": "Groww",
+      "purchase_date": "2023-01-15",
+      "fund_name": "Axis Bluechip Fund"
+    },
+    {
+      "symbol": "ICICI_PRUTECHMF",
+      "asset_type": "mutual_fund",
+      "quantity": 85.30,
+      "avg_price": 198.50,
+      "current_price": 225.60,
+      "sector": "Equity - Sectoral/Thematic",
+      "platform_acquired": "Zerodha",
+      "purchase_date": "2023-02-20",
+      "fund_name": "ICICI Prudential Technology Fund"
+    },
+    {
+      "symbol": "SBIBLUCHIP_MF",
+      "asset_type": "mutual_fund",
+      "quantity": 95.75,
+      "avg_price": 168.30,
+      "current_price": 185.45,
+      "sector": "Equity - Large Cap",
+      "platform_acquired": "Groww",
+      "purchase_date": "2023-06-01",
+      "fund_name": "SBI Bluechip Fund"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-15",
+      "symbol": "RELIANCE.NSE",
+      "transaction_type": "buy",
+      "quantity": 25,
+      "price": 2450.50,
+      "charges": 125.50
+    },
+    {
+      "date": "2023-02-10",
+      "symbol": "HDFCBANK.NSE",
+      "transaction_type": "buy",
+      "quantity": 30,
+      "price": 1580.25,
+      "charges": 95.30
+    },
+    {
+      "date": "2023-03-20",
+      "symbol": "TCS.NSE",
+      "transaction_type": "buy",
+      "quantity": 15,
+      "price": 3200.00,
+      "charges": 110.00
+    },
+    {
+      "date": "2023-04-05",
+      "symbol": "INFY.NSE",
+      "transaction_type": "buy",
+      "quantity": 20,
+      "price": 1420.00,
+      "charges": 85.20
+    },
+    {
+      "date": "2023-05-12",
+      "symbol": "ITC.NSE",
+      "transaction_type": "buy",
+      "quantity": 50,
+      "price": 385.50,
+      "charges": 65.40
+    },
+    {
+      "date": "2023-01-15",
+      "symbol": "AXISDIRECT_MF001",
+      "transaction_type": "buy",
+      "quantity": 125.45,
+      "price": 145.20,
+      "charges": 0
+    },
+    {
+      "date": "2023-02-20",
+      "symbol": "ICICI_PRUTECHMF",
+      "transaction_type": "buy",
+      "quantity": 85.30,
+      "price": 198.50,
+      "charges": 0
+    },
+    {
+      "date": "2023-06-01",
+      "symbol": "SBIBLUCHIP_MF",
+      "transaction_type": "buy",
+      "quantity": 95.75,
+      "price": 168.30,
+      "charges": 0
+    }
+  ],
+  "watch_list": [
+    "BHARTIARTL.NSE",
+    "ASIANPAINT.NSE",
+    "TATAMOTORS.NSE",
+    "WIPRO.NSE",
+    "BAJFINANCE.NSE"
+  ]
+}
