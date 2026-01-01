@@ -3,7 +3,7 @@
   "net_value": 850000,
   "holdings": [
     {
-      "symbol": "RELIANCE.NSE",
+      "symbol": "RELIANCE.BSE",
       "asset_type": "equity",
       "quantity": 25,
       "avg_price": 2450.50,
@@ -14,7 +14,7 @@
       "pe_ratio": 24.5
     },
     {
-      "symbol": "TCS.NSE",
+      "symbol": "TCS.BSE",
       "asset_type": "equity",
       "quantity": 15,
       "avg_price": 3200.00,
@@ -25,7 +25,7 @@
       "pe_ratio": 28.3
     },
     {
-      "symbol": "HDFCBANK.NSE",
+      "symbol": "HDFCBANK.BSE",
       "asset_type": "equity",
       "quantity": 30,
       "avg_price": 1580.25,
@@ -36,7 +36,7 @@
       "pe_ratio": 19.2
     },
     {
-      "symbol": "INFY.NSE",
+      "symbol": "INFY.BSE",
       "asset_type": "equity",
       "quantity": 20,
       "avg_price": 1420.00,
@@ -47,7 +47,7 @@
       "pe_ratio": 26.8
     },
     {
-      "symbol": "ITC.NSE",
+      "symbol": "ITC.BSE",
       "asset_type": "equity",
       "quantity": 50,
       "avg_price": 385.50,
@@ -94,7 +94,7 @@
   "transactions": [
     {
       "date": "2023-01-15",
-      "symbol": "RELIANCE.NSE",
+      "symbol": "RELIANCE.BSE",
       "transaction_type": "buy",
       "quantity": 25,
       "price": 2450.50,
@@ -102,7 +102,7 @@
     },
     {
       "date": "2023-02-10",
-      "symbol": "HDFCBANK.NSE",
+      "symbol": "HDFCBANK.BSE",
       "transaction_type": "buy",
       "quantity": 30,
       "price": 1580.25,
@@ -110,7 +110,7 @@
     },
     {
       "date": "2023-03-20",
-      "symbol": "TCS.NSE",
+      "symbol": "TCS.BSE",
       "transaction_type": "buy",
       "quantity": 15,
       "price": 3200.00,
@@ -118,7 +118,7 @@
     },
     {
       "date": "2023-04-05",
-      "symbol": "INFY.NSE",
+      "symbol": "INFY.BSE",
       "transaction_type": "buy",
       "quantity": 20,
       "price": 1420.00,
@@ -126,7 +126,7 @@
     },
     {
       "date": "2023-05-12",
-      "symbol": "ITC.NSE",
+      "symbol": "ITC.BSE",
       "transaction_type": "buy",
       "quantity": 50,
       "price": 385.50,
@@ -158,10 +158,10 @@
     }
   ],
   "watch_list": [
-    "BHARTIARTL.NSE",
-    "ASIANPAINT.NSE",
-    "TATAMOTORS.NSE",
-    "WIPRO.NSE",
-    "BAJFINANCE.NSE"
+    "BHARTIARTL.BSE",
+    "ASIANPAINT.BSE",
+    "TATAMOTORS.BSE",
+    "WIPRO.BSE",
+    "BAJFINANCE.BSE"
   ]
 }
