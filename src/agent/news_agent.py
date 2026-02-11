@@ -3,7 +3,7 @@ import logging
 from langchain.agents import create_agent
 from langchain_core.prompts import PromptTemplate
 
-from src.news_tools import (
+from src.tools.news_tools import (
     get_alphavantage_news_sentiment,
     get_finnhub_company_news,
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def create_news_agent():
     llm = create_llm()
 
-    FINANCIAL_NEWS_ANALYST_PROMPT = """
+    FINANCIAL_NEWS_AGENT_PROMPT = """
     
         You are a Senior Financial News Analyst at a leading investment bank with 15+ years of experience in equity research and market sentiment analysis.
 

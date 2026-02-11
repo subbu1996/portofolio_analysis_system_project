@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
-from src.agent.graph import create_multi_agent_system
+from src.agent.graph import create_multi_agent_system, graph_main_with_persistence
 from src.utils.utils import load_portfolio_from_file, pretty_print_messages, print_stream
 
 
@@ -154,6 +154,43 @@ def interactive_mode():
             print(f"\n Error: {e}\n")
 
 
+def run_interactive_with_persistence(app):
+    while True:
+        try:
+            user_input = input("\n You: ").strip()
+            
+            if user_input.lower() in ['exit', 'quit', 'bye']:
+                print("Goodbye!")
+                break
+            
+            if not user_input:
+                continue
+            
+            # Prepare the input
+            input_data = {
+                "messages": [HumanMessage(content=user_input)],
+                "next": "",
+            }
+
+            config = {"configurable": {"thread_id": 'thread-1', "user_id": "1"}}
+            print_stream(
+                app.stream(
+                    input_data,
+                    config,
+                    subgraphs=True,
+                    stream_mode='updates'
+                )
+            ) 
+           
+            
+        except KeyboardInterrupt:
+            print("\n\n Goodbye!")
+            break
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            print(f"\n Error: {e}\n")
+
+
 def main():
     """Main entry point."""
     import sys
@@ -163,13 +200,14 @@ def main():
         if sys.argv[1] == "examples":
             run_examples()
         elif sys.argv[1] == "interactive":
-            interactive_mode()
+            # interactive_mode()
+            run_interactive_with_persistence(app=graph_main_with_persistence)
         else:
             print(f"Unknown command: {sys.argv[1]}")
             print("Usage: python main.py [examples|interactive]")
     else:
         # Default to interactive mode
-        interactive_mode()
+        run_interactive_with_persistence(app=graph_main_with_persistence)
 
 
 if __name__ == "__main__":

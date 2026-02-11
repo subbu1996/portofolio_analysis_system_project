@@ -39,9 +39,9 @@ def create_ollama_llm(model_name: str = "gpt-oss:20b", temperature: float = 0.7)
         logger.error(f"Error initializing Ollama LLM INnstance: {e}")
         raise
 
-# nvidia/nemotron-3-nano-30b-a3b:free
+# nvidia/nemotron-3-nano-30b-a3b:free  - best in free tier
 # openai/gpt-oss-120b:free
-def create_openrouter_llm(model_name: str = "nvidia/nemotron-3-nano-30b-a3b:free", temperature: float = 0.7):
+def create_openrouter_llm(model_name: str = "openai/gpt-oss-120b:free", temperature: float = 0.7):
     try:
         os.environ["OPENAI_API_KEY"] = os.getenv("OPENROUTER_API_KEY")
         os.environ["OPENAI_BASE_URL"] = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")

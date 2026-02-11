@@ -50,3 +50,5 @@ def create_multi_agent_system(persistence_required=True):
     return compiled_graph
 
 graph = create_multi_agent_system(persistence_required=False)
+
+graph_main_with_persistence = create_multi_agent_system(persistence_required=True)

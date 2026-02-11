@@ -2,14 +2,14 @@ import logging
 # from langgraph.prebuilt import create_react_agent
 from langchain.agents import create_agent
 
-from src.tools import (
+from src.tools.stock_tools import (
     fetch_stock_price,
     fetch_company_fundamentals,
     fetch_historical_prices,
     calculate_portfolio_metrics,
 )
 
-from src.portfolio_tools import (
+from src.tools.portfolio_tools import (
     get_portfolio_data,
     get_holding_info,
     get_holdings_by_sector,

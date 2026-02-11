@@ -10,9 +10,6 @@ class AgentState(TypedDict):
     Attributes:
         messages: List of conversation messages
         next: Name of the next agent to call or 'FINISH'
-        portfolio_data: Parsed portfolio JSON data
-        analysis_results: Results from financial calculations
-        error: Error message if any operation fails
     """
     messages: Annotated[Sequence[BaseMessage], add_messages]
     next: str
