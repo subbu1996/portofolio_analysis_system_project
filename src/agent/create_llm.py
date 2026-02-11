@@ -26,8 +26,8 @@ def create_llm(mode=None):
 # mistral - 'mistral:7b'
 # GPT - 'gpt-oss:20b'
 # ministral - ministral-3:3b
-
-def create_ollama_llm(model_name: str = "ministral-3:3b", temperature: float = 0.7):
+# google - functiongemma:270m or functiongemma
+def create_ollama_llm(model_name: str = "gpt-oss:20b", temperature: float = 0.7):
     try:
         llm = ChatOllama(
             model=model_name,

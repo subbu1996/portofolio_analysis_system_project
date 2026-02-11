@@ -65,6 +65,7 @@ def run_portfolio_analysis(query: str, portfolio_data: dict = None):
                 input_data,
                 config,
                 subgraphs=True,
+                stream_mode='updates'
             )
         ) 
     except Exception as e:

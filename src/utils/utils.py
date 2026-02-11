@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 def print_stream(stream):
     for ns, update in stream:
+        if len(ns) > 0:
+            continue
         for node, node_updates in update.items():
             if node_updates is None:
                 continue
@@ -20,6 +22,7 @@ def print_stream(stream):
             else:
                 raise ValueError(node_updates)
 
+            # print(node_updates_list)
             for node_updates in node_updates_list:
                 if isinstance(node_updates, tuple):
                     continue

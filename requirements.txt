@@ -10,4 +10,5 @@ numpy_financial
 langgraph-supervisor
 langchain-ollama
 langgraph-checkpoint-sqlite
-xirr
+langchain_mcp_adapters
+langchain_community
