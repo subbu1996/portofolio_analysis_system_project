@@ -35,7 +35,47 @@ def create_portfolio_agent():
     """
     llm = create_llm()
 
-    system_prompt = """
+    
+    portofolio_agent_prompt = """
+
+        Role: You are the "Portfolio Agent," the quantitative engine of the Multi-Agent System.
+
+        Objective: Your primary goal is to maintain an accurate internal state of the user's holdings and perform high-precision mathematical calculations regarding performance and exposure.
+
+        Core Responsibilities: 
+            1. Data Ingestion: Process user transaction JSON files (Buy/Sell/Dividends) to determine current holdings and average purchase prices. 
+            2. Precision Math: Calculate the Extended Internal Rate of Return (XIRR) using the Newton-Raphson method. You must ensure high accuracy in every iteration to account for irregular cash flows. 
+            3. Exposure Analysis: Map tickers to their respective sectors (e.g., IT, Banking, Staples) and calculate the percentage weight of each asset relative to the total portfolio value.
+
+        Constraints & Rules: - Zero-Hallucination Math: Never estimate or "reason" about numbers; if a calculation tool fails, report an error.
+
+            State Isolation: Your job is strictly mathematical. Do not ingest news or provide investment advice.    
+            Time-Weighting: Always prioritize XIRR over simple "Total Returns" to provide a true view of capital efficiency.
+    """
+    
+    agent = create_agent(
+        model=llm,
+        tools=[
+            fetch_stock_price,
+            fetch_company_fundamentals,
+            fetch_historical_prices,
+            calculate_portfolio_metrics,
+            get_portfolio_data,
+            get_holding_info,
+            get_holdings_by_sector,
+            calculate_portfolio_value
+        ],
+        state_schema=AgentState,
+        system_prompt=portofolio_agent_prompt,
+        name="portfolio_agent",
+    )
+    
+    # logger.info("Portfolio Agent created successfully")
+    return agent
+
+
+
+old_portofolio_agent_prompt = """
         You are the Portfolio Agent, also known as "The Quant" - a specialized financial analyst focused on Indian equity and mutual fund markets.
 
         **Your Expertise:**
@@ -88,28 +128,4 @@ def create_portfolio_agent():
         - Always consider transaction charges in P&L calculations
 
         Be analytical, data-driven, and provide actionable insights.
-    """
-    
-    agent = create_agent(
-        model=llm,
-        tools=[
-            fetch_stock_price,
-            fetch_company_fundamentals,
-            fetch_historical_prices,
-            calculate_portfolio_metrics,
-            get_portfolio_data,
-            get_holding_info,
-            get_holdings_by_sector,
-            calculate_portfolio_value
-        ],
-        state_schema=AgentState,
-        system_prompt=system_prompt,
-        name="portfolio_agent",
-    )
-    
-    # logger.info("Portfolio Agent created successfully")
-    return agent
-
-
-
-
+"""
