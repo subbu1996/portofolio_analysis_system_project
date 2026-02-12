@@ -1,0 +1,44 @@
+/* assets/style.css */
+
+/* Hide Scrollbar but allow scrolling */
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #e9ecef; 
+    border-radius: 3px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #adb5bd; 
+}
+
+/* Sidebar Transition */
+.sidebar-transition {
+    transition: width 0.3s ease-in-out;
+    overflow-x: hidden;
+    white-space: nowrap;
+}
+
+/* Chat Viewport */
+.chat-viewport {
+    scroll-behavior: smooth;
+}
+
+/* Modal Z-Index */
+.mantine-Modal-root {
+    z-index: 2000 !important;
+}
+
+/* Gemini Input Styling */
+.gemini-input-container {
+    background-color: #f0f4f9; /* Light gray background */
+    transition: background-color 0.2s ease;
+}
+.gemini-input-container:focus-within {
+    background-color: #fff; /* White on focus */
+    box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+}

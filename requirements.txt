@@ -12,3 +12,8 @@ langchain-ollama
 langgraph-checkpoint-sqlite
 langchain_mcp_adapters
 langchain_community
+dash>=2.16.0
+dash-mantine-components>=0.14.0
+dash-iconify>=0.1.2
+pandas
+pytz
