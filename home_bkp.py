@@ -5,7 +5,7 @@ from dash_iconify import DashIconify
 from datetime import datetime, timezone, timedelta
 from ui_utils.db import (create_session, get_all_sessions, get_messages, 
                       add_message, delete_session, update_session_title)
-from ui_utils.llm import generate_response
+from ui_utils.llm_mock_bkp import generate_response
 
 dash.register_page(__name__, path='/')
 

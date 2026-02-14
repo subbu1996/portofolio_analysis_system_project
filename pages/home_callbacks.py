@@ -279,7 +279,7 @@ def handle_message_submission(n_clicks, text, session_id):
         return no_update
     
     add_message(session_id, "user", text)
-    thinking, response = generate_response(text)
+    thinking, response = generate_response(text, session_id)
     add_message(session_id, "assistant", response, thinking_process=thinking)
     
     return ""
