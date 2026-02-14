@@ -4,7 +4,12 @@ from dash_iconify import DashIconify
 from datetime import datetime, timezone, timedelta
 from ui_utils.db import (create_session, get_all_sessions, get_messages, 
                       add_message, delete_session, update_session_title)
-from ui_utils.llm import generate_response
+from ui_utils.llm import (
+    start_streaming_response, 
+    get_streaming_state, 
+    clear_streaming_state,
+    stop_streaming
+)
 
 
 # --- Helpers ---
@@ -38,7 +43,8 @@ def render_message_bubble(msg):
                     [
                         dmc.AccordionControl(
                             dmc.Group([
-                                DashIconify(icon="eos-icons:bubble-loading", color="gray"),
+                                # FIX: Changed icon to static 'brain' to prevent infinite spinning in history
+                                DashIconify(icon="tabler:brain", color="gray"),
                                 dmc.Text("Thinking Process", size="sm", c="dimmed")
                             ], gap="xs"),
                             h=40
@@ -84,6 +90,7 @@ def render_message_bubble(msg):
     )
 
 def render_history_item(session, active_id, collapsed=False):
+    # FIX: Ensure robust string comparison for IDs
     is_active = str(session["session_id"]) == str(active_id) if active_id else False
     
     # 1. Collapsed View
@@ -141,6 +148,37 @@ def render_history_item(session, active_id, collapsed=False):
     ], gap="xs", wrap="nowrap", mb=5)
 
 
+def render_thinking_indicator():
+    """Render a 'Thinking...' indicator shown during processing"""
+    return dmc.Group(
+        [
+            dmc.Avatar(radius="xl", color="grape", children="AI"),
+            dmc.Paper(
+                children=[
+                    dmc.Group([
+                        dmc.Loader(size="xs", type="dots"),
+                        dmc.Text("Thinking...", c="dimmed", size="sm")
+                    ], gap="sm"),
+                ],
+                p="md",
+                radius="lg",
+                withBorder=True,
+                shadow="sm",
+                style={
+                    "backgroundColor": "#f8f9fa",
+                    "borderColor": "#dee2e6"
+                }
+            ),
+        ],
+        justify="start",
+        align="start",
+        mb="md",
+        w="100%",
+        id="thinking-indicator"
+    )
+
+
+
 # --- Callbacks ---
 
 # 1. Sidebar Toggle Logic
@@ -163,34 +201,31 @@ def toggle_sidebar(n, is_collapsed):
 @callback(
     [Output("current-session-store", "data"),
      Output("chat-history-list", "children"),
-     Output("new-chat-container", "children"), 
-     Output("chat-window", "children")],
-    [Input({"type": "new-chat-btn", "index": ALL}, "n_clicks"), # Captures clicks from ANY new chat button
+     Output("new-chat-container", "children")],
+    [Input({"type": "new-chat-btn", "index": ALL}, "n_clicks"),
      Input({"type": "history-item", "index": ALL}, "n_clicks"),
      Input({"type": "delete-chat-btn", "index": ALL}, "n_clicks"),
-     Input("send-btn", "n_clicks"),
      Input("rename-save", "n_clicks"),
      Input("sidebar-state-store", "data")],
-    [State("current-session-store", "data"),
-     State("user-input", "value")] 
+    [State("current-session-store", "data")]
 )
-def manage_session_state(new_chat_clicks, history_clicks, delete_clicks, send_clicks, rename_save, is_collapsed, current_session_id, user_msg):
+def manage_session_state(new_chat_clicks, history_clicks, delete_clicks, 
+                         rename_save, is_collapsed, current_session_id):
     trigger = ctx.triggered_id
     
     # Handle Deletion
     if isinstance(trigger, dict) and trigger["type"] == "delete-chat-btn":
         sess_to_delete = trigger["index"]
         delete_session(sess_to_delete)
-        if sess_to_delete == current_session_id:
+        if str(sess_to_delete) == str(current_session_id):
             current_session_id = None
             
     # Handle Switching
     elif isinstance(trigger, dict) and trigger["type"] == "history-item":
         current_session_id = trigger["index"]
 
-    # Handle New Chat (Pattern Matching - checks if ANY new chat button was clicked)
+    # Handle New Chat
     elif isinstance(trigger, dict) and trigger["type"] == "new-chat-btn":
-        # Check if the click count is actually > 0 (prevents fire on init)
         if any(c > 0 for c in new_chat_clicks if c is not None):
             current_session_id = create_session("New Chat")
 
@@ -203,7 +238,7 @@ def manage_session_state(new_chat_clicks, history_clicks, delete_clicks, send_cl
             current_session_id = create_session("New Chat")
             sessions = get_all_sessions()
     
-    # Render New Chat Button (Toggle based on Sidebar state)
+    # Render New Chat Button
     if is_collapsed:
         new_chat_btn = dmc.Tooltip(
             label="New Chat",
@@ -227,13 +262,10 @@ def manage_session_state(new_chat_clicks, history_clicks, delete_clicks, send_cl
             size="md"
         )
 
-    # Render History List (Pass collapsed state correctly)
+    # Render History List
     history_list = [render_history_item(s, current_session_id, is_collapsed) for s in sessions]
     
-    messages = get_messages(current_session_id)
-    chat_content = [render_message_bubble(m) for m in messages]
-    
-    return current_session_id, history_list, new_chat_btn, chat_content
+    return current_session_id, history_list, new_chat_btn
 
 
 # 3. Rename Logic
@@ -268,23 +300,89 @@ def handle_rename_modal(init_clicks, cancel, save, new_title, target_id):
 
 # 4. Message Sending
 @callback(
-    Output("user-input", "value"),
+    [Output("user-input", "value"),
+     Output("message-trigger", "data")],
     Input("send-btn", "n_clicks"),
     [State("user-input", "value"),
      State("current-session-store", "data")],
     prevent_initial_call=True
 )
 def handle_message_submission(n_clicks, text, session_id):
+    if not session_id:
+        return no_update, no_update
+    
+    # FIX: Cast to string
+    session_id = str(session_id)
+    
+    # Check if currently streaming
+    streaming_state = get_streaming_state(session_id)
+    
+    if streaming_state and streaming_state.status == "processing":
+        # Stop button was clicked
+        stop_streaming(session_id)
+        return no_update, {"action": "stopped", "timestamp": datetime.now().isoformat()}
+    
+    # Send button was clicked
     if not text or not text.strip():
-        return no_update
+        return no_update, no_update
     
-    add_message(session_id, "user", text)
-    thinking, response = generate_response(text, session_id)
-    add_message(session_id, "assistant", response, thinking_process=thinking)
+    add_message(session_id, "user", text.strip())
+    start_streaming_response(text.strip(), session_id)
     
-    return ""
+    # Clear input and trigger chat display update
+    return "", {"action": "sent", "timestamp": datetime.now().isoformat()}
 
-# 5. Auto-Scroll
+
+@callback(
+    [Output("chat-window", "children"),
+     Output("update-interval", "disabled"),
+     Output("send-btn", "children"),  # NOTE: Fixed ID reference to match layout if needed, but sticking to children pattern
+     Output("send-btn", "color"),
+     Output("send-btn", "id")],
+    [Input("current-session-store", "data"),
+     Input("message-trigger", "data"),  
+     Input("update-interval", "n_intervals")],
+    prevent_initial_call=False
+)
+def update_chat_display(session_id, message_trigger, n_intervals):
+    if not session_id:
+        return [], True, DashIconify(icon="tabler:send", width=20), "blue", "send-btn"
+    
+    # FIX: Cast to string to match dictionary keys in llm.py
+    session_id = str(session_id)
+    
+    # Check streaming state
+    streaming_state = get_streaming_state(session_id)
+    is_streaming = streaming_state and streaming_state.status == "processing"
+    
+    # Load ALL messages
+    messages = get_messages(session_id)
+    chat_content = [render_message_bubble(m) for m in messages]
+    
+    if is_streaming:
+        chat_content.append(render_thinking_indicator())
+        interval_disabled = False  # Keep polling
+        
+        # STOP Button Configuration
+        btn_icon = DashIconify(icon="tabler:player-stop-filled", width=20)
+        btn_color = "red"
+        # We keep the ID same to handle click in same callback, 
+        # or you can assume logic handles the toggle based on state.
+    else:
+        interval_disabled = True   # Stop polling
+        
+        # SEND Button Configuration
+        btn_icon = DashIconify(icon="tabler:send", width=20)
+        btn_color = "blue"
+
+    # Clean up completed streams
+    if streaming_state and streaming_state.status in ["complete", "error", "stopped"]:
+        clear_streaming_state(session_id)
+    
+    return chat_content, interval_disabled, btn_icon, btn_color, "send-btn"
+
+
+# 5. Auto-Scroll & Enter Key (Unchanged)
 clientside_callback(
     """
     function(children) {
@@ -299,4 +397,29 @@ clientside_callback(
     """,
     Output("chat-window", "style"),
     Input("chat-window", "children")
+)
+
+clientside_callback(
+    """
+    function(value, n_intervals) {
+        const textarea = document.getElementById('user-input');
+        if (!textarea) return window.dash_clientside.no_update;
+        
+        if (!textarea.hasAttribute('data-listener-added')) {
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const sendBtn = document.getElementById('send-btn');
+                    if (sendBtn) sendBtn.click();
+                }
+            });
+            textarea.setAttribute('data-listener-added', 'true');
+        }
+        
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("user-input", "style"),
+    Input("user-input", "value"),
+    Input("update-interval", "n_intervals")
 )

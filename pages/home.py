@@ -5,7 +5,7 @@ from dash_iconify import DashIconify
 from datetime import datetime, timezone, timedelta
 from ui_utils.db import (create_session, get_all_sessions, get_messages, 
                       add_message, delete_session, update_session_title)
-from ui_utils.llm import generate_response
+# from ui_utils.llm import generate_response
 
 dash.register_page(__name__, path='/', title='Chat')
 
@@ -16,6 +16,14 @@ from pages.home_callbacks import *
 layout = dmc.Group([
     dcc.Store(id="current-session-store", storage_type="session"),
     dcc.Store(id="sidebar-state-store", data=False),
+
+    dcc.Store(id="message-trigger"),
+    dcc.Interval(
+        id="update-interval",
+        interval=500,  # Poll every 500ms
+        disabled=True,
+        n_intervals=0
+    ),
     
     # Rename Modal
     dmc.Modal(
@@ -103,21 +111,26 @@ layout = dmc.Group([
                 dmc.Group([
                     dmc.Textarea(
                         id="user-input",
-                        placeholder="Type a message...",
+                        placeholder="Type a message... (Press Enter to send, Shift+Enter for new line)",
                         autosize=True,
                         minRows=1,
                         maxRows=4,
                         w=600,
                         style={"flex": 1},
                     ),
-                    dmc.ActionIcon(
-                        DashIconify(icon="tabler:send", width=20),
-                        id="send-btn",
-                        variant="filled",
-                        color="blue",
-                        size="lg",
-                        radius="xl",
-                        n_clicks=0
+                    html.Div(
+                        id="send-btn-container",
+                        children=[
+                            dmc.ActionIcon(
+                                DashIconify(icon="tabler:send", width=20),
+                                id="send-btn",
+                                variant="filled",
+                                color="blue",
+                                size="lg",
+                                radius="xl",
+                                n_clicks=0
+                            )
+                        ]
                     )
                 ], align="end")
             ],

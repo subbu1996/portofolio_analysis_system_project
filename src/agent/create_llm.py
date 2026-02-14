@@ -16,6 +16,8 @@ def create_llm(mode=None):
         llm = create_openrouter_llm()
     elif mode in ['ollama']:
         llm = create_ollama_llm()
+    elif mode in ['openai']:
+        llm = create_openai_llm()
     elif mode in ['gemini']:
         llm = create_gemini_llm()
     else:
@@ -41,7 +43,7 @@ def create_ollama_llm(model_name: str = "gpt-oss:20b", temperature: float = 0.7)
 
 # nvidia/nemotron-3-nano-30b-a3b:free  - best in free tier
 # openai/gpt-oss-120b:free
-def create_openrouter_llm(model_name: str = "openai/gpt-oss-120b:free", temperature: float = 0.7):
+def create_openrouter_llm(model_name: str = "nvidia/nemotron-3-nano-30b-a3b:free", temperature: float = 0.7):
     try:
         os.environ["OPENAI_API_KEY"] = os.getenv("OPENROUTER_API_KEY")
         os.environ["OPENAI_BASE_URL"] = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
@@ -55,6 +57,22 @@ def create_openrouter_llm(model_name: str = "openai/gpt-oss-120b:free", temperat
     except Exception as e:
         logger.error(f"Error initializing Ollama LLM INnstance: {e}")
         raise
+
+
+def create_openai_llm(model_name: str = "gpt-4.1-nano", temperature: float = 0.7):
+    try:
+        os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+
+        llm = ChatOpenAI(
+            model=model_name,
+            temperature=temperature
+        )
+        # logger.info(f"Successfully initialized {model_name}")
+        return llm
+    except Exception as e:
+        logger.error(f"Error initializing OpenAI LLM INnstance: {e}")
+        raise
+
 
 def create_gemini_llm(model_name: str = "gemini-2.5-flash", temperature: float = 0.7) -> ChatGoogleGenerativeAI:
     try:

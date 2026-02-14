@@ -66,10 +66,33 @@ def update_session_title(session_id, new_title):
 
 def add_message(session_id, role, content, thinking_process=None):
     conn = get_connection()
-    conn.execute(
+    cursor = conn.cursor() 
+    cursor.execute(
         "INSERT INTO messages (session_id, role, content, thinking_process) VALUES (?, ?, ?, ?)",
         (session_id, role, content, thinking_process)
     )
+    message_id = cursor.lastrowid 
+    conn.commit()
+    conn.close()
+    return message_id 
+
+def update_message_content(message_id, content, thinking_process=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    if thinking_process is not None:
+        cursor.execute("""
+            UPDATE messages 
+            SET content = ?, thinking_process = ?
+            WHERE id = ?
+        """, (content, thinking_process, message_id))
+    else:
+        cursor.execute("""
+            UPDATE messages 
+            SET content = ?
+            WHERE id = ?
+        """, (content, message_id))
+    
     conn.commit()
     conn.close()
 

@@ -1,80 +1,179 @@
 import logging
 from langchain_core.messages import HumanMessage
 from src.agent.graph import graph_main_with_persistence as graph
+import threading
+from queue import Queue, Empty
+from ui_utils.db import add_message, update_message_content
 
-# Configure logging to catch agent errors
+# Configure logging
 logger = logging.getLogger(__name__)
 
-def generate_response(user_input, session_id):
-    """
-    Interact with the Multi-Agent System (LangGraph).
-    
-    Args:
-        user_input (str): The user's query.
-        session_id (str): The current chat session ID for persistence.
-        
-    Returns:
-        tuple: (thinking_process_string, final_response_string)
-    """
-    #  Map Dash Session ID to LangGraph Thread ID
-    config = {"configurable": {"thread_id": session_id}}
+# Global state management
+streaming_states = {}
+streaming_lock = threading.Lock()
 
+class StreamingState:
+    """Manages the state of a streaming response"""
+    
+    def __init__(self, session_id):
+        # FIX: Ensure session_id is always a string for consistency
+        self.session_id = str(session_id)
+        self.thinking_chunks = []
+        self.response_chunks = []
+        self.status = "processing"
+        self.error_message = None
+        self.message_id = None
+        self.should_stop = False
+        
+    def add_thinking(self, chunk):
+        self.thinking_chunks.append(chunk)
+        
+    def add_response(self, chunk):
+        self.response_chunks.append(chunk)
+        
+    def get_thinking(self):
+        return "\n\n".join(self.thinking_chunks) if self.thinking_chunks else None
+        
+    def get_response(self):
+        return "".join(self.response_chunks) if self.response_chunks else ""
+        
+    def mark_complete(self):
+        self.status = "complete"
+        
+    def mark_error(self, error_msg):
+        self.status = "error"
+        self.error_message = error_msg
+
+    def mark_stopped(self):
+        self.status = "stopped"
+        self.should_stop = True
+
+    def is_active(self):
+        return self.status == "processing" and not self.should_stop
+
+
+def get_streaming_state(session_id):
+    """Get the current streaming state for a session"""
+    # FIX: Cast key to string
+    key = str(session_id)
+    with streaming_lock:
+        return streaming_states.get(key)
+
+
+def clear_streaming_state(session_id):
+    """Clear the streaming state after completion"""
+    # FIX: Cast key to string
+    key = str(session_id)
+    with streaming_lock:
+        if key in streaming_states:
+            del streaming_states[key]
+
+def stop_streaming(session_id):
+    """Stop the streaming for a session"""
+    # FIX: Cast key to string
+    key = str(session_id)
+    with streaming_lock:
+        state = streaming_states.get(key)
+        if state:
+            state.mark_stopped()
+            logger.info(f"Streaming stopped for session {key}")
+            return True
+    return False
+
+
+def _process_stream_chunk(chunk, state, start_msg_count):
+    """Process a single chunk from the LangGraph stream"""
+    if state.should_stop:
+        return
+    
+    for node_name, node_output in chunk.items():
+        if "messages" in node_output:
+            messages = node_output["messages"]
+            for msg in messages:
+                if state.should_stop:  
+                    return
+                  
+                if msg.type == "ai":
+                    sender = getattr(msg, "name", node_name)
+                    is_final = sender.lower() in ["supervisor", ""] or not hasattr(msg, "name")
+                    
+                    if is_final:
+                        if hasattr(msg, 'content') and msg.content:
+                            state.add_response(msg.content)
+                    else:
+                        display_name = sender.replace("_", " ").title()
+                        state.add_thinking(f"**[{display_name}]**: {msg.content}")
+                
+                elif msg.type == "tool":
+                    tool_name = getattr(msg, "name", "Tool")
+                    state.add_thinking(f"**[System Ops]**: Executed `{tool_name}` successfully.")
+
+
+def _stream_response_worker(user_input, session_id, state):
+    """Worker thread that processes the LLM stream"""
+    config = {"configurable": {"thread_id": str(session_id)}}
+    
     try:
-        # Determine the starting point of the conversation
-        # need this to filter out old messages and only show "Thinking" for THIS turn.
         initial_state = graph.get_state(config)
         start_msg_count = len(initial_state.values.get("messages", [])) if initial_state.values else 0
-
-        # Invoke the Multi-Agent System
-        # pass the user input as a HumanMessage. 
-        # The graph handles routing (Supervisor -> Worker -> Supervisor)
-        response_state = graph.invoke(
-            {"messages": [HumanMessage(content=user_input)]},
-            config=config
+        
+        # Create placeholder
+        thinking_preview = "Processing your request..."
+        response_preview = ""
+        message_id = add_message(
+            session_id, 
+            "assistant", 
+            response_preview,
+            thinking_process=thinking_preview
         )
-
-        # Extract and Parse New Messages
-        all_messages = response_state.get("messages", [])
-        new_messages = all_messages[start_msg_count:]
-
-        thinking_lines = []
-        final_response = "I processed the request but returned no output."
-
-        # Filter specifically for AI messages to construct the response
-        ai_messages = [m for m in new_messages if m.type == "ai"]
+        state.message_id = message_id
         
-        if ai_messages:
-            # CONVENTION: The LAST message from the system is the response to the user.
-            # (Usually from the 'supervisor' summarizing the results)
-            final_message = ai_messages[-1]
-            final_response = final_message.content
-
-            # ALL PREVIOUS messages in this turn are considered "Thinking Process"
-            # (e.g., Portfolio Agent calculating XIRR, News Agent fetching data)
-            for m in new_messages:
-                # Skip the final message and the user input
-                if m == final_message or m.type == "human":
-                    continue
-                
-                # Format Tool Outputs
-                if m.type == "tool":
-                    # We summarize tool outputs to avoid cluttering the UI with raw JSON
-                    tool_name = getattr(m, "name", "Tool")
-                    thinking_lines.append(f"**[System Ops]**: Executed `{tool_name}` successfully.")
-                
-                # Format Worker Agent Thoughts
-                elif m.type == "ai":
-                    sender = getattr(m, "name", "Agent")
-                    # Clean up the sender name for display
-                    display_name = sender.replace("_", " ").title()
-                    thinking_lines.append(f"**[{display_name}]**: {m.content}")
-
-        # Join thinking lines with newlines for the Markdown renderer
-        thinking_content = "\n\n".join(thinking_lines) if thinking_lines else None
+        # Stream
+        for chunk in graph.stream(
+            {"messages": [HumanMessage(content=user_input)]},
+            config=config,
+            stream_mode="updates"
+        ):
+            _process_stream_chunk(chunk, state, start_msg_count)
+            
+            # Update DB periodically
+            if len(state.response_chunks) % 3 == 0 or len(state.thinking_chunks) > 0:
+                 update_message_content(
+                    message_id,
+                    state.get_response() or "...",
+                    state.get_thinking()
+                )
         
-        return thinking_content, final_response
-
+        # Final update
+        final_response = state.get_response() or "I processed the request but returned no output."
+        final_thinking = state.get_thinking()
+        
+        update_message_content(message_id, final_response, final_thinking)
+        state.mark_complete()
+        
     except Exception as e:
-        logger.error(f"Error in Multi-Agent invocation: {e}", exc_info=True)
-        # Graceful error handling for the UI
-        return None, f"**System Error**: I encountered an issue while coordinating the agents. \n\n*Debug Details*: {str(e)}"
+        logger.error(f"Error in streaming response: {e}", exc_info=True)
+        error_msg = f"**System Error**: I encountered an issue while processing your request.\n\n*Debug Details*: {str(e)}"
+        state.mark_error(error_msg)
+        if state.message_id:
+            update_message_content(state.message_id, error_msg, None)
+
+
+def start_streaming_response(user_input, session_id):
+    """Start generating a streaming response"""
+    session_id = str(session_id)
+    
+    clear_streaming_state(session_id)
+    state = StreamingState(session_id)
+    
+    with streaming_lock:
+        streaming_states[session_id] = state
+    
+    thread = threading.Thread(
+        target=_stream_response_worker,
+        args=(user_input, session_id, state),
+        daemon=True
+    )
+    thread.start()
+    
+    return state

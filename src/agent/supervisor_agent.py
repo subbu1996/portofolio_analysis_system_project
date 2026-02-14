@@ -71,7 +71,7 @@ def create_supervisor_agent(agents: list):
         prompt=supervisor_agent_prompt,
         state_schema=AgentState,
         add_handoff_back_messages=True,
-        output_mode="full_history",
+        output_mode="last_message",
         parallel_tool_calls=False,  # Process one agent at a time
         supervisor_name="supervisor",
     )
