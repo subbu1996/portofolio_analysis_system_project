@@ -24,7 +24,13 @@ def convert_to_ist(timestamp_str):
     except:
         return timestamp_str
 
-def render_message_bubble(msg):
+def render_message_bubble(msg, is_loading=False):
+    """
+    Renders a chat message bubble.
+    Args:
+        msg: The message dictionary.
+        is_loading: Boolean, true if this is the active message currently generating.
+    """
     is_user = msg["role"] == "user"
     timestamp_ist = convert_to_ist(msg["timestamp"])
     
@@ -36,21 +42,43 @@ def render_message_bubble(msg):
 
     content_children = [dmc.Text(msg["content"], style={"whiteSpace": "pre-wrap"})]
     
-    if not is_user and msg.get("thinking_process"):
+    # Render Thinking Process Accordion if data exists OR if it's currently loading
+    # (We want to show the 'Thinking...' header even if the text buffer is briefly empty during start)
+    has_thinking = "thinking_process" in msg and msg["thinking_process"]
+    
+    if not is_user and (has_thinking or is_loading):
+        # Determine Header Content based on Loading State
+        if is_loading:
+            # Active Loading State: Loader + "Thinking..."
+            header_content = dmc.Group([
+                dmc.Loader(size="xs", type="dots"),
+                dmc.Text("Thinking...", size="sm", c="dimmed")
+            ], gap="xs")
+        else:
+            # Static History State: Brain Icon + "Thinking Process"
+            header_content = dmc.Group([
+                DashIconify(icon="tabler:brain", color="gray"),
+                dmc.Text("Thinking Process", size="sm", c="dimmed")
+            ], gap="xs")
+
+        thinking_text = msg.get("thinking_process", "Initializing...") if msg.get("thinking_process") else "Initializing..."
+        
+        # We use the message ID so Dash knows it's the same accordion across updates
+        msg_id = msg.get("id", "temp")
+        accordion_id = f"thinking-acc-{msg_id}"
+
+        # Insert Accordion at the TOP of the content list
         content_children.insert(0, dmc.Accordion(
+            id=accordion_id, 
             children=[
                 dmc.AccordionItem(
                     [
                         dmc.AccordionControl(
-                            dmc.Group([
-                                # FIX: Changed icon to static 'brain' to prevent infinite spinning in history
-                                DashIconify(icon="tabler:brain", color="gray"),
-                                dmc.Text("Thinking Process", size="sm", c="dimmed")
-                            ], gap="xs"),
+                            header_content,
                             h=40
                         ),
                         dmc.AccordionPanel(
-                            dmc.Code(msg["thinking_process"], block=True, c="dimmed", style={"fontSize": "0.85em"})
+                            dmc.Code(thinking_text, block=True, c="dimmed", style={"fontSize": "0.85em"})
                         )
                     ],
                     value="thinking"
@@ -59,6 +87,10 @@ def render_message_bubble(msg):
             variant="separated",
             radius="md",
             mb="xs",
+            # This ensures if user closes it, it STAYS closed even if we re-render
+            value="thinking" if is_loading else None,
+            persistence=True, 
+            persistence_type="memory",
             styles={"item": {"border": "1px solid #eee", "backgroundColor": "#fcfcfc"}}
         ))
 
@@ -90,7 +122,7 @@ def render_message_bubble(msg):
     )
 
 def render_history_item(session, active_id, collapsed=False):
-    # FIX: Ensure robust string comparison for IDs
+   
     is_active = str(session["session_id"]) == str(active_id) if active_id else False
     
     # 1. Collapsed View
@@ -146,37 +178,6 @@ def render_history_item(session, active_id, collapsed=False):
             ])
         ])
     ], gap="xs", wrap="nowrap", mb=5)
-
-
-def render_thinking_indicator():
-    """Render a 'Thinking...' indicator shown during processing"""
-    return dmc.Group(
-        [
-            dmc.Avatar(radius="xl", color="grape", children="AI"),
-            dmc.Paper(
-                children=[
-                    dmc.Group([
-                        dmc.Loader(size="xs", type="dots"),
-                        dmc.Text("Thinking...", c="dimmed", size="sm")
-                    ], gap="sm"),
-                ],
-                p="md",
-                radius="lg",
-                withBorder=True,
-                shadow="sm",
-                style={
-                    "backgroundColor": "#f8f9fa",
-                    "borderColor": "#dee2e6"
-                }
-            ),
-        ],
-        justify="start",
-        align="start",
-        mb="md",
-        w="100%",
-        id="thinking-indicator"
-    )
-
 
 
 # --- Callbacks ---
@@ -311,7 +312,6 @@ def handle_message_submission(n_clicks, text, session_id):
     if not session_id:
         return no_update, no_update
     
-    # FIX: Cast to string
     session_id = str(session_id)
     
     # Check if currently streaming
@@ -336,7 +336,7 @@ def handle_message_submission(n_clicks, text, session_id):
 @callback(
     [Output("chat-window", "children"),
      Output("update-interval", "disabled"),
-     Output("send-btn", "children"),  # NOTE: Fixed ID reference to match layout if needed, but sticking to children pattern
+     Output("send-btn", "children"),
      Output("send-btn", "color"),
      Output("send-btn", "id")],
     [Input("current-session-store", "data"),
@@ -348,7 +348,6 @@ def update_chat_display(session_id, message_trigger, n_intervals):
     if not session_id:
         return [], True, DashIconify(icon="tabler:send", width=20), "blue", "send-btn"
     
-    # FIX: Cast to string to match dictionary keys in llm.py
     session_id = str(session_id)
     
     # Check streaming state
@@ -357,17 +356,20 @@ def update_chat_display(session_id, message_trigger, n_intervals):
     
     # Load ALL messages
     messages = get_messages(session_id)
-    chat_content = [render_message_bubble(m) for m in messages]
+    
+    chat_content = []
+    for i, m in enumerate(messages):
+        # Determine if this message is the one currently streaming
+        # It must be the last message AND we must be in streaming state AND it must be an AI message
+        is_generating = is_streaming and (i == len(messages) - 1) and (m["role"] == "assistant")
+        chat_content.append(render_message_bubble(m, is_loading=is_generating))
     
     if is_streaming:
-        chat_content.append(render_thinking_indicator())
         interval_disabled = False  # Keep polling
         
         # STOP Button Configuration
         btn_icon = DashIconify(icon="tabler:player-stop-filled", width=20)
         btn_color = "red"
-        # We keep the ID same to handle click in same callback, 
-        # or you can assume logic handles the toggle based on state.
     else:
         interval_disabled = True   # Stop polling
         
@@ -382,15 +384,23 @@ def update_chat_display(session_id, message_trigger, n_intervals):
     return chat_content, interval_disabled, btn_icon, btn_color, "send-btn"
 
 
-# 5. Auto-Scroll & Enter Key (Unchanged)
+# Auto-Scroll & Enter Key
 clientside_callback(
     """
     function(children) {
         var viewport = document.querySelector(".chat-viewport");
         if (viewport) {
-            setTimeout(function() {
-                viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-            }, 100);
+            // Calculate distance from bottom
+            // scrollHeight (total content) - scrollTop (current position) - clientHeight (visible area)
+            var distanceToBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+            
+            // Only auto-scroll if the user is already near the bottom (within 150px)
+            // This prevents "fighting" the user if they scroll up to read history
+            if (distanceToBottom < 150) {
+                setTimeout(function() {
+                    viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+                }, 100);
+            }
         }
         return window.dash_clientside.no_update;
     }

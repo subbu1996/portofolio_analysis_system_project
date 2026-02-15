@@ -81,7 +81,18 @@ def stop_streaming(session_id):
     return False
 
 
-def _process_stream_chunk(chunk, state, start_msg_count):
+def _get_message_identifier(msg):
+    """
+    Generate a unique identifier for a message to check for duplicates.
+    Prioritizes message ID, falls back to (type, content) hash.
+    """
+    if hasattr(msg, 'id') and msg.id:
+        return msg.id
+    # Fallback for messages without IDs (uses type and content)
+    return f"{msg.type}:{msg.content}"
+
+
+def _process_stream_chunk(chunk, state, seen_ids):
     """Process a single chunk from the LangGraph stream"""
     if state.should_stop:
         return
@@ -92,6 +103,10 @@ def _process_stream_chunk(chunk, state, start_msg_count):
             for msg in messages:
                 if state.should_stop:  
                     return
+                
+                msg_id = _get_message_identifier(msg)
+                if msg_id in seen_ids:
+                    continue
                   
                 if msg.type == "ai":
                     sender = getattr(msg, "name", node_name)
@@ -115,7 +130,11 @@ def _stream_response_worker(user_input, session_id, state):
     
     try:
         initial_state = graph.get_state(config)
-        start_msg_count = len(initial_state.values.get("messages", [])) if initial_state.values else 0
+        
+        seen_ids = set()
+        if initial_state.values and "messages" in initial_state.values:
+            for m in initial_state.values["messages"]:
+                seen_ids.add(_get_message_identifier(m))
         
         # Create placeholder
         thinking_preview = "Processing your request..."
@@ -134,7 +153,7 @@ def _stream_response_worker(user_input, session_id, state):
             config=config,
             stream_mode="updates"
         ):
-            _process_stream_chunk(chunk, state, start_msg_count)
+            _process_stream_chunk(chunk, state, seen_ids)
             
             # Update DB periodically
             if len(state.response_chunks) % 3 == 0 or len(state.thinking_chunks) > 0:
